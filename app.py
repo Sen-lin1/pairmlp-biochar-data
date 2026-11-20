@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Bilingual Streamlit GUI for the final 5859-parameter Pair-MLP model.
-
-The interface follows the layout and interaction pattern of the supplied BFRC
-GUI while preserving the Pair-MLP data, model, validation, single-prediction,
-and batch-prediction logic.  All components use one pastel colour system.
-"""
+"""Bilingual Pair-MLP adsorption prediction app."""
 
 from datetime import datetime
 from pathlib import Path
@@ -33,22 +28,11 @@ from optimize_pair_v2 import BASE_FEATURES  # noqa: E402
 
 MODEL_PARAMETERS = 5859
 
-PRIMARY_OPERATING = [
-    "Adsorption time",
-    "Initial concentration",
-    "Adsorbent dosage",
-    "Solution pH",
-]
-
-ADDITIONAL_OPERATING = [
-    "RPM",
-    "Volume",
-    "Adsorption temperature",
-    "Ion concentration",
-    "Humic acid",
-]
-
-MATERIAL_FEATURES = BASE_FEATURES[:15]
+OPERATING_GROUPS = (
+    ("🧪", "Adsorption inputs", "吸附条件", ("Adsorption time", "Initial concentration", "Adsorbent dosage")),
+    ("💧", "Water chemistry", "水化学条件", ("Solution pH", "Ion concentration", "Humic acid")),
+    ("⚙️", "Experimental settings", "实验设置", ("RPM", "Volume", "Adsorption temperature")),
+)
 
 
 # ==========================================
@@ -167,17 +151,6 @@ FEATURE_LABEL_KEYS = {
     "Humic acid": "humic",
 }
 
-MATERIAL_LABELS_CN = {
-    "Adsorbent": "吸附剂",
-    "Pollutant": "污染物",
-    "Pyrolysis temperature": "热解温度",
-    "Pyrolysis time": "热解时间",
-    "Ash": "灰分",
-    "Surface area": "比表面积",
-    "Pore volume": "孔容",
-    "Average pore size": "平均孔径",
-}
-
 INPUT_CONFIG = {
     "Adsorption time": {"min_value": 0.0, "step": 1.0, "format": "%.6f"},
     "Initial concentration": {"min_value": 0.0, "step": 0.1, "format": "%.6f"},
@@ -196,7 +169,7 @@ INPUT_CONFIG = {
 # ==========================================
 st.set_page_config(
     page_title="Pair-MLP biochar adsorption predictor",
-    layout="centered",
+    layout="wide",
     initial_sidebar_state="collapsed",
 )
 
@@ -204,200 +177,7 @@ st.set_page_config(
 # ==========================================
 # 3. One consistent visual system
 # ==========================================
-st.markdown(
-    """
-<style>
-:root {
-    --salmon: #DF9E9B;
-    --blue: #99BADF;
-    --green: #D8E7CA;
-    --teal: #99CDCE;
-    --purple: #999ACD;
-    --pink: #FFD0E9;
-    --ink: #28333D;
-    --muted: #66727C;
-    --paper: #FBFCFD;
-    --title: #52659B;
-    --heading: #4E6576;
-    --border: #C9D2DA;
-}
-
-html, body, .stApp, .stMarkdown, .stText, .stCaption, label, p, input,
-textarea, button, select, [data-testid="stWidgetLabel"],
-[data-testid="stMarkdownContainer"], [data-testid="stDataFrame"],
-[data-testid="stTable"], [data-testid="stRadio"] label,
-[data-testid="stSelectbox"] label, [data-testid="stNumberInput"] label,
-[data-testid="stExpander"] summary, [data-testid="stExpander"] summary * {
-    font-family: Arial, "Microsoft YaHei", "SimHei", sans-serif !important;
-    font-weight: 700 !important;
-}
-
-span[data-testid="stIconMaterial"], [data-testid="stIconMaterial"],
-[data-testid="stExpanderToggleIcon"], [data-testid="stExpanderToggleIcon"] *,
-.material-icons, .material-icons-outlined, .material-icons-round,
-.material-symbols-outlined, .material-symbols-rounded, .material-symbols-sharp {
-    font-family: "Material Symbols Rounded", "Material Icons", sans-serif !important;
-    font-weight: normal !important;
-    font-style: normal !important;
-    font-size: 1.25rem !important;
-    line-height: 1 !important;
-    letter-spacing: normal !important;
-    text-transform: none !important;
-    display: inline-block !important;
-    white-space: nowrap !important;
-    direction: ltr !important;
-    -webkit-font-feature-settings: "liga" !important;
-    -webkit-font-smoothing: antialiased !important;
-    font-feature-settings: "liga" !important;
-}
-
-.stApp { background: var(--paper); color: var(--ink); }
-header[data-testid="stHeader"] {
-    border-top: 4px solid transparent;
-    border-image: linear-gradient(90deg, var(--salmon), var(--blue), var(--green),
-        var(--teal), var(--purple), var(--pink)) 1;
-}
-
-.block-container, [data-testid="stMainBlockContainer"],
-[data-testid="stAppViewContainer"] .main .block-container {
-    max-width: 1120px !important;
-    padding: 1rem 1.5rem 2rem !important;
-}
-
-h1 {
-    color: var(--title) !important;
-    font-size: 1.55rem !important;
-    font-weight: 900 !important;
-    line-height: 1.35 !important;
-}
-
-.stMarkdown h3 {
-    color: var(--heading) !important;
-    border-bottom: 2px solid var(--teal);
-    padding-bottom: .3rem;
-    margin: 1rem 0 .5rem;
-    font-size: 1.18rem !important;
-    font-weight: 800 !important;
-}
-
-[data-testid="stForm"] {
-    width: 100% !important;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 1rem;
-    background: #FFFFFF;
-}
-
-[data-testid="stSelectbox"], [data-testid="stNumberInput"] { width: 100% !important; }
-[data-testid="stNumberInput"] input { font-family: Arial, sans-serif !important; }
-[data-testid="stNumberInput"] [data-testid="stWidgetLabel"],
-[data-testid="stNumberInput"] [data-testid="stWidgetLabel"] p,
-[data-testid="stNumberInput"] label, [data-testid="stNumberInput"] label p {
-    white-space: nowrap !important;
-    word-break: keep-all !important;
-    overflow-wrap: normal !important;
-    font-size: .88rem !important;
-    line-height: 1.25 !important;
-}
-[data-testid="stHorizontalBlock"] > div { min-width: 0 !important; }
-
-[data-testid="stAlert"] {
-    background: var(--green) !important;
-    border-left: 4px solid var(--teal) !important;
-    color: var(--ink) !important;
-}
-[data-testid="stAlert"] p { color: var(--ink) !important; }
-
-.stButton > button, [data-testid="stFormSubmitButton"] > button {
-    width: 100%;
-    margin-top: 1rem;
-    padding: .65rem 2rem;
-    border-radius: 8px;
-    background: var(--purple) !important;
-    border-color: var(--purple) !important;
-    color: #17232C !important;
-    font-size: 1.05rem;
-    font-weight: 800 !important;
-    transition: all .25s;
-}
-.stButton > button:hover, [data-testid="stFormSubmitButton"] > button:hover,
-.stDownloadButton > button:hover {
-    background: var(--blue) !important;
-    border-color: var(--blue) !important;
-    color: #17232C !important;
-}
-.stButton > button:focus, .stDownloadButton > button:focus,
-[data-testid="stFormSubmitButton"] > button:focus {
-    outline: none !important;
-    box-shadow: none !important;
-}
-
-.stDownloadButton > button {
-    width: 100%;
-    margin-top: .8rem;
-    border-radius: 8px;
-    background: var(--teal) !important;
-    border-color: var(--teal) !important;
-    color: #17232C !important;
-    font-weight: 800 !important;
-}
-
-.result-box {
-    margin: 1.5rem 0 .5rem;
-    padding: 1.35rem;
-    border: 1px solid var(--teal);
-    border-radius: 10px;
-    background: var(--green);
-    text-align: center;
-}
-.result-box.upper { background: #EEF3FA; border-color: var(--blue); }
-.result-label { margin-bottom: .4rem; color: #4E5B65; font-size: 1.02rem; }
-.result-value { color: var(--title); font-size: 2.05rem; font-weight: 900 !important; line-height: 1.25; }
-.result-unit { margin-left: .15rem; color: var(--muted); font-size: 1rem; }
-
-div[data-testid="stRadio"] { min-width: 190px !important; }
-div[data-testid="stRadio"] > label {
-    height: 0 !important;
-    min-height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    visibility: hidden !important;
-}
-div[data-testid="stRadio"] div[role="radiogroup"] {
-    display: flex !important;
-    flex-flow: row nowrap !important;
-    justify-content: flex-end !important;
-    align-items: center !important;
-    gap: .75rem !important;
-    width: 100% !important;
-}
-div[data-testid="stRadio"] div[role="radiogroup"] label {
-    display: inline-flex !important;
-    width: auto !important;
-    min-width: max-content !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    white-space: nowrap !important;
-}
-div[data-testid="stRadio"] div[role="radiogroup"] label p {
-    margin: 0 !important;
-    white-space: nowrap !important;
-    line-height: 1.2 !important;
-}
-
-[data-testid="stExpander"] summary { min-height: 2.2rem !important; align-items: center !important; }
-[data-testid="stExpander"] summary p { margin: 0 !important; color: var(--ink) !important; }
-[data-testid="stDataFrame"] { background: #FFFFFF; }
-
-@media screen and (max-width: 900px) {
-    [data-testid="stNumberInput"] [data-testid="stWidgetLabel"] p,
-    [data-testid="stNumberInput"] label p { font-size: .80rem !important; }
-}
-</style>
-""",
-    unsafe_allow_html=True,
-)
-
+st.markdown('\n<style>\n:root { --paper: #edf6fc; --ink: #172b36; --muted: #506d7f; }\n.stApp, [data-testid="stHeader"] { background: var(--paper); color: var(--ink); }\n.stApp :is(h1,h2,h3,p,label,input,button,summary) { font-family: Arial, "Microsoft YaHei", sans-serif; }\n[data-testid="stMainBlockContainer"] { max-width: 1260px; padding-top: 1.75rem; }\n.st-key-language_switch [role="radiogroup"] { justify-content: end; }\n.stApp h1 { text-align: center; color: var(--ink); font-size: clamp(1.9rem,3.5vw,3.2rem); }\n.intro, .system { text-align: center; color: var(--muted); }\n.intro { font-size: 1.25rem; margin: 0; }\n.system { margin: 0 0 .65rem; }\n.system strong { color: #26796d; }\n.stApp h3 { color: var(--ink); font-size: clamp(1.04rem,1.7vw,1.48rem); margin-bottom: .55rem; }\n[data-testid="stForm"] { background: transparent; border: 0; padding: 0; }\n[data-testid="stNumberInput"] [data-baseweb="input"] { background: #f1f2f5; border-color: #dce7ed; }\n[data-testid="stNumberInput"] button { background: #f1f2f5; color: #294958; }\n[data-testid="stFormSubmitButton"] > button { background: #30a79d; border-color: #278c85; color: #092e29; font-weight: 700; margin-top: .35rem; }\n[data-testid="stFormSubmitButton"] > button:hover { background: #247a73; color: white; }\n.result-box { background: #e0f0d8; border: 1px solid #a9cd9c; border-radius: 10px; padding: 1.1rem 1.4rem; display: flex; align-items: center; justify-content: space-between; gap: .8rem; flex-wrap: wrap; }\n.result-box.upper { background: #e1f0fa; border-color: #abcfe4; }\n.result-value { font-size: 2.35rem; font-weight: 750; line-height: 1.15; color: #386b30; }\n.result-box.upper .result-value { color: #316786; }\n.result-unit { font-size: 1rem; font-weight: 400; }\n[data-testid="stCaptionContainer"] { color: var(--muted); }\n</style>\n', unsafe_allow_html=True)
 
 # ==========================================
 # 4. Data and prediction helpers
@@ -444,20 +224,6 @@ def finite_prediction(predictor, frame: pd.DataFrame) -> np.ndarray:
     return prediction
 
 
-def material_table(row: pd.Series, language: str, t: dict[str, str]) -> pd.DataFrame:
-    """Build the read-only material-properties table."""
-    labels = [
-        MATERIAL_LABELS_CN.get(feature, feature) if language == "cn" else feature
-        for feature in MATERIAL_FEATURES
-    ]
-    return pd.DataFrame(
-        {
-            t["material_input"]: labels,
-            t["recorded_value"]: [str(row[feature]) for feature in MATERIAL_FEATURES],
-        }
-    )
-
-
 def result_box(label: str, value: float, extra_class: str = "") -> str:
     """Render one result card."""
     return (
@@ -476,7 +242,7 @@ with language_col:
     language_option = st.radio(
         "Language",
         ["中文", "English"],
-        index=0,
+        index=1,
         horizontal=True,
         key="language_switch",
         label_visibility="collapsed",
@@ -485,7 +251,9 @@ with language_col:
 language = "cn" if language_option == "中文" else "en"
 t = TRANSLATIONS[language]
 
-st.title(t["main_title"])
+st.title("💧 Pair-MLP 生物炭吸附预测" if language == "cn" else "💧 Pair-MLP Biochar Adsorption Prediction", anchor=False)
+intro = "根据实验条件预测指定接触时间的吸附量（mg/g）" if language == "cn" else "Predict uptake (mg/g) at a specified contact time from experimental conditions"
+st.markdown(f'<p class="intro">{intro}</p>', unsafe_allow_html=True)
 
 
 # ==========================================
@@ -502,17 +270,6 @@ if train.empty:
     st.error(f"{t['load_fail']}No training rows were found in the dataset.")
     st.stop()
 
-profiles = (
-    train[["Adsorbent", "Pollutant"]]
-    .drop_duplicates()
-    .sort_values(["Adsorbent", "Pollutant"])
-)
-options = [
-    f"{adsorbent} | {pollutant}"
-    for adsorbent, pollutant in profiles.itertuples(index=False, name=None)
-]
-
-
 # ==========================================
 # 7. Fixed supported system for the single-record prototype
 # ==========================================
@@ -525,11 +282,9 @@ positive = pool[
     pool["Adsorption time"].gt(0) & pool["Initial concentration"].gt(0)
 ]
 row = (positive if not positive.empty else pool).iloc[0][BASE_FEATURES].copy()
-st.caption(
-    "Fixed supported system: AMCB–IBU | known-pair interpolation only"
-    if language == "en"
-    else "固定支持体系：AMCB–IBU｜仅用于已知组合内插值"
-)
+system = "固定支持体系" if language == "cn" else "Fixed supported system"
+scope = "仅用于已知组合内插值" if language == "cn" else "Known-pair interpolation only"
+st.markdown(f'<p class="system">{system} · <strong>AMCB–IBU</strong> · {scope}</p>', unsafe_allow_html=True)
 
 
 # ==========================================
@@ -537,42 +292,26 @@ st.caption(
 # ==========================================
 with st.form("prediction_form"):
     values: dict[str, float] = {}
-
-    st.markdown(t["sec1_title"])
-    primary_columns = st.columns([1.00, 1.25, 1.00, 0.85], gap="medium")
-    for column, feature in zip(primary_columns, PRIMARY_OPERATING):
+    for column, (icon, en, cn, features) in zip(st.columns(3, gap="large"), OPERATING_GROUPS):
         with column:
-            values[feature] = make_input(
-                t[FEATURE_LABEL_KEYS[feature]], float(row[feature]), feature, choice
-            )
-
-    st.markdown(t["sec2_title"])
-    first_additional_row = st.columns([0.85, 0.95, 1.25], gap="medium")
-    for column, feature in zip(first_additional_row, ADDITIONAL_OPERATING[:3]):
-        with column:
-            values[feature] = make_input(
-                t[FEATURE_LABEL_KEYS[feature]], float(row[feature]), feature, choice
-            )
-
-    second_additional_row = st.columns(3, gap="medium")
-    for column, feature in zip(second_additional_row, ADDITIONAL_OPERATING[3:]):
-        with column:
-            values[feature] = make_input(
-                t[FEATURE_LABEL_KEYS[feature]], float(row[feature]), feature, choice
-            )
-    with second_additional_row[2]:
-        st.empty()
-
-    submit_btn = st.form_submit_button(t["predict"], type="primary")
+            st.markdown(f"### {icon} {cn if language == 'cn' else en}")
+            for feature in features:
+                values[feature] = make_input(
+                    t[FEATURE_LABEL_KEYS[feature]], float(row[feature]), feature, choice
+                )
+    submit_btn = st.form_submit_button("开始预测" if language == "cn" else "Predict adsorption", type="primary")
 
 
 # ==========================================
 # 9. Single prediction and export
 # ==========================================
 if submit_btn:
+    st.session_state["prediction_values"] = values.copy()
+
+if "prediction_values" in st.session_state:
     try:
         prediction_row = row.copy()
-        for feature, value in values.items():
+        for feature, value in st.session_state["prediction_values"].items():
             prediction_row[feature] = value
 
         frame = pd.DataFrame([prediction_row])[BASE_FEATURES]
