@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent if "__file__" in globals() else Path.
 
 # The deployment package is self-contained: GUI, model, data and the compact
 # unpickling compatibility module all live in this directory.
-MODEL_PATH = BASE_DIR / "selected_model.pkl"
+MODEL_PATH = BASE_DIR / "Pair-MLP.pkl"
 DATA_PATH = BASE_DIR / "test-data.csv"
 
 import optimize_pair_v2  # noqa: E402,F401  Required when unpickling the model.
